@@ -11,7 +11,7 @@
 
 FROM amazonlinux:2
 
-ENV RUBY_VERSION="2.6.3" \
+ENV RUBY_VERSION="2.6.4" \
  PYTHON_VERSION="3.7.3" \
  PHP_VERSION=7.3.6 \
  JAVA_VERSION=11 \ 
@@ -503,6 +503,11 @@ RUN set -ex \
     && chmod 755 /opt/chromedriver-$CHROME_DRIVER_VERSION \
     && ln -s /opt/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver \
     && chromedriver --version
+
+RUN set -ex \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-libs-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-10.7-2PGDG.rhel7.x86_64.rpm \ 
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-server-10.7-2PGDG.rhel7.x86_64.rpm 
 
 # Cleanup
 RUN set -ex \
