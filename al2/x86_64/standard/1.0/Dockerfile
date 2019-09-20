@@ -505,9 +505,17 @@ RUN set -ex \
     && chromedriver --version
 
 RUN set -ex \
+    && yum remove -y postgresql* \
     && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-libs-10.7-2PGDG.rhel7.x86_64.rpm \
-    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-10.7-2PGDG.rhel7.x86_64.rpm \ 
-    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-server-10.7-2PGDG.rhel7.x86_64.rpm 
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-server-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-devel-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-contrib-10.7-2PGDG.rhel7.x86_64.rpm 
+
+RUN set -ex \
+    && su postgres -c "/usr/pgsql-10/bin/initdb ~/psql" \
+    && su postgres -c "/usr/pgsql-10/bin/pg_ctl -D ~/psql start" \
+    && su postgres -c "createuser --superuser faw_testing"
 
 # Cleanup
 RUN set -ex \
