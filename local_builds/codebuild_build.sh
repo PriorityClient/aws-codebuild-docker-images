@@ -35,6 +35,7 @@ function usage {
     echo "  -a        Used to specify an artifact output directory."
     echo "Options:"
     echo "  -l IMAGE  Used to override the default local agent image."
+    echo "  -r        Used to specify a report output directory."
     echo "  -s        Used to specify source information. Defaults to the current working directory for primary source."
     echo "               * First (-s) is for primary source"
     echo "               * Use additional (-s) in <sourceIdentifier>:<sourceLocation> format for secondary source"
@@ -43,6 +44,7 @@ function usage {
     echo "  -p        Used to specify the AWS CLI Profile."
     echo "  -b FILE   Used to specify a buildspec override file. Defaults to buildspec.yml in the source directory."
     echo "  -m        Used to mount the source directory to the customer build container directly."
+    echo "  -d        Used to run the build container in docker privileged mode."
     echo "  -e FILE   Used to specify a file containing environment variables."
     echo "            (-e) File format expectations:"
     echo "               * Each line is in VAR=VAL format"
@@ -57,14 +59,17 @@ image_flag=false
 artifact_flag=false
 awsconfig_flag=false
 mount_src_dir_flag=false
+docker_privileged_mode_flag=false
 
-while getopts "cmi:a:s:b:e:l:p:h" opt; do
+while getopts "cmdi:a:r:s:b:e:l:p:h" opt; do
     case $opt in
         i  ) image_flag=true; image_name=$OPTARG;;
         a  ) artifact_flag=true; artifact_dir=$OPTARG;;
+        r  ) report_dir=$OPTARG;;
         b  ) buildspec=$OPTARG;;
         c  ) awsconfig_flag=true;;
         m  ) mount_src_dir_flag=true;;
+        d  ) docker_privileged_mode_flag=true;;
         s  ) source_dirs+=("$OPTARG");;
         e  ) environment_variable_file=$OPTARG;;
         l  ) local_agent_image=$OPTARG;;
@@ -100,19 +105,24 @@ else
 fi
 
 docker_command+="\"IMAGE_NAME=$image_name\" -e \
-    \"ARTIFACTS=$(allOSRealPath $artifact_dir)\""
+    \"ARTIFACTS=$(allOSRealPath "$artifact_dir")\""
+
+if [ -n "$report_dir" ]
+then
+    docker_command+=" -e \"REPORTS=$(allOSRealPath "$report_dir")\""
+fi
 
 if [ -z "$source_dirs" ]
 then
-    docker_command+=" -e \"SOURCE=$(allOSRealPath $PWD)\""
+    docker_command+=" -e \"SOURCE=$(allOSRealPath "$PWD")\""
 else
     for index in "${!source_dirs[@]}"; do
         if [ $index -eq 0 ]
         then
-            docker_command+=" -e \"SOURCE=$(allOSRealPath ${source_dirs[$index]})\""
+            docker_command+=" -e \"SOURCE=$(allOSRealPath "${source_dirs[$index]}")\""
         else
             identifier=${source_dirs[$index]%%:*}
-            src_dir=$(allOSRealPath ${source_dirs[$index]#*:})
+            src_dir=$(allOSRealPath "${source_dirs[$index]#*:}")
 
             docker_command+=" -e \"SECONDARY_SOURCE_$index=$identifier:$src_dir\""
         fi
@@ -121,7 +131,7 @@ fi
 
 if [ -n "$buildspec" ]
 then
-    docker_command+=" -e \"BUILDSPEC=$(allOSRealPath $buildspec)\""
+    docker_command+=" -e \"BUILDSPEC=$(allOSRealPath "$buildspec")\""
 fi
 
 if [ -n "$environment_variable_file" ]
@@ -160,6 +170,11 @@ then
     docker_command+=" -e \"MOUNT_SOURCE_DIRECTORY=TRUE\""
 fi
 
+if $docker_privileged_mode_flag
+then
+    docker_command+=" -e \"DOCKER_PRIVILEGED_MODE=TRUE\""
+fi
+
 if isOSWindows
 then
     docker_command+=" -e \"INITIATOR=$USERNAME\""
@@ -167,7 +182,12 @@ else
     docker_command+=" -e \"INITIATOR=$USER\""
 fi
 
-docker_command+=" amazon/aws-codebuild-local:latest"
+if [ -n "$local_agent_image" ]
+then
+    docker_command+=" $local_agent_image"
+else
+    docker_command+=" public.ecr.aws/codebuild/local-builds:latest"
+fi
 
 # Note we do not expose the AWS_SECRET_ACCESS_KEY or the AWS_SESSION_TOKEN
 exposed_command=$docker_command
