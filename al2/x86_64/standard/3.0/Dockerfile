@@ -40,6 +40,19 @@ RUN set -ex \
            amazon-ecr-credential-helper \
     && rm /etc/yum.repos.d/mono-centos7-stable.repo
 
+RUN set -ex \
+    && yum remove -y postgresql* \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-libs-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-server-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-devel-10.7-2PGDG.rhel7.x86_64.rpm \
+    && yum install -y https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-latest-x86_64/postgresql10-contrib-10.7-2PGDG.rhel7.x86_64.rpm 
+
+RUN set -ex \
+    && su postgres -c "/usr/pgsql-10/bin/initdb ~/psql" \
+    && su postgres -c "/usr/pgsql-10/bin/pg_ctl -D ~/psql start" \
+    && su postgres -c "createuser --superuser faw_testing"
+
 RUN useradd codebuild-user
 
 #=======================End of layer: core  =================
@@ -312,7 +325,7 @@ RUN  n $NODE_10_VERSION && npm install --save-dev -g -f grunt && npm install --s
 
 #**************** RUBY *********************************************************
 
-ENV RUBY_26_VERSION="2.6.6"
+ENV RUBY_26_VERSION="2.6.4"
 
 RUN rbenv install $RUBY_26_VERSION; rm -rf /tmp/*; rbenv global $RUBY_26_VERSION;ruby -v
 
