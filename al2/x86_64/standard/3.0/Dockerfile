@@ -120,9 +120,6 @@ RUN set -ex \
     && git clone https://github.com/rbenv/ruby-build.git $RUBY_BUILD_SRC_DIR \
     && sh $RUBY_BUILD_SRC_DIR/install.sh
 
-##python
-RUN curl https://pyenv.run | bash
-ENV PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
 
 
 #=======================End of layer: tools  =================
@@ -149,22 +146,13 @@ ENV RUBY_26_VERSION="2.6.4"
 
 RUN rbenv install $RUBY_26_VERSION; rm -rf /tmp/*; rbenv global $RUBY_26_VERSION;ruby -v
 
+COPY ./Gemfile Gemfile
+RUN gem install bundler \
+  && bundle config build.pg --with-opt-dir=/usr/pgsql-10/ \
+  && bundle install --with test
+
 #**************** END RUBY *****************************************************
 
-#**************** PYTHON *****************************************************
-ENV PYTHON_37_VERSION="3.7.10"
-ENV PYTHON_PIP_VERSION=21.1.2
-ENV PYYAML_VERSION=5.4.1
-
-COPY tools/runtime_configs/python/$PYTHON_37_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_37_VERSION
-RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_37_VERSION; rm -rf /tmp/*
-RUN   pyenv global  $PYTHON_37_VERSION
-RUN set -ex \
-    && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
-    && pip3 install --no-cache-dir --upgrade 'setuptools==57.4.0' wheel aws-sam-cli awscli boto3 pipenv virtualenv --use-feature=2020-resolver
-
-#**************** END PYTHON *****************************************************
 
 
 #=======================End of layer: runtimes_1  =================
@@ -197,29 +185,6 @@ RUN set -ex \
     && chmod +x /usr/local/bin/dind /usr/local/bin/docker-compose \
     && docker-compose version
 
-#Python 3.8
-ENV PYTHON_38_VERSION="3.8.10"
-
-COPY tools/runtime_configs/python/$PYTHON_38_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_38_VERSION
-RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_38_VERSION; rm -rf /tmp/*
-RUN   pyenv global  $PYTHON_38_VERSION
-RUN set -ex \
-    && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
-    && pip3 install --no-cache-dir --upgrade 'setuptools==57.4.0' wheel aws-sam-cli awscli boto3 pipenv virtualenv --use-feature=2020-resolver
-
-#Python 3.9
-ENV PYTHON_39_VERSION="3.9.5"
-
-COPY tools/runtime_configs/python/$PYTHON_39_VERSION /root/.pyenv/plugins/python-build/share/python-build/$PYTHON_39_VERSION
-RUN   env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYTHON_39_VERSION; rm -rf /tmp/*
-RUN   pyenv global  $PYTHON_39_VERSION
-RUN set -ex \
-    && pip3 install --no-cache-dir --upgrade --force-reinstall "pip==$PYTHON_PIP_VERSION" \
-    && pip3 install --no-cache-dir --upgrade "PyYAML==$PYYAML_VERSION" \
-    && pip3 install --no-cache-dir --upgrade 'setuptools==57.4.0' wheel aws-sam-cli awscli boto3 pipenv virtualenv --use-feature=2020-resolver
-
-
 # Node 12
 ENV NODE_12_VERSION="12.22.2"
 
@@ -228,10 +193,6 @@ RUN  n $NODE_12_VERSION && npm install --save-dev -g -f grunt && npm install --s
 
 #=======================End of layer: runtimes_2  =================
 FROM runtimes_2 AS runtimes_3
-
-#Ruby 2.7
-ENV RUBY_27_VERSION="2.7.2"
-RUN rbenv install $RUBY_27_VERSION; rm -rf /tmp/*; rbenv global $RUBY_27_VERSION;ruby -v
 
 #===================END of runtimes_3 ==============
 FROM runtimes_3 AS al2_v3
