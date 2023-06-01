@@ -1,3 +1,8 @@
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 510409879486.dkr.ecr.us-east-1.amazonaws.com
+docker build -t 510409879486.dkr.ecr.us-east-1.amazonaws.com/faw-build-docker-image .
+docker push 510409879486.dkr.ecr.us-east-1.amazonaws.com/faw-build-docker-image:latest
+
+
 # AWS CodeBuild curated Docker images
 
 This repository holds Dockerfiles of official AWS CodeBuild curated Docker images. Please refer to [the AWS CodeBuild User Guide](http://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref.html) for list of environments supported by AWS CodeBuild.
